@@ -53,6 +53,7 @@
 #include <KToggleFullScreenAction>
 #include <KToolBar>
 #include <KWindowConfig>
+#include <KWindowSystem>
 #include <KXMLGUIFactory>
 
 #define HAVE_STYLE_MANAGER __has_include(<KStyleManager>)
@@ -60,6 +61,21 @@
 #include <KStyleManager>
 #endif
 
+// X11 startup handling
+#define HAVE_X11 __has_include(<KStartupInfo>)
+#if HAVE_X11
+#include <KStartupInfo>
+#include <KWindowInfo>
+#include <KX11Extras>
+#endif
+
+// wayland window activation
+#define HAVE_WAYLAND __has_include(<KWaylandExtras>)
+#if HAVE_WAYLAND
+#include <KWaylandExtras>
+#endif
+
+#include <QActionGroup>
 #include <QApplication>
 #include <QDir>
 #include <QDragEnterEvent>
@@ -77,8 +93,13 @@
 #include <QStackedWidget>
 #include <QTimer>
 #include <QToolButton>
+#include <QWindow>
 
 #include <ktexteditor/sessionconfiginterface.h>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 
 // END
 
@@ -416,8 +437,17 @@ void KateMainWindow::setupActions()
     a->setIcon(QIcon::fromTheme(QStringLiteral("edit-copy-path")));
     a->setText(i18n("Copy Location"));
     connect(a, &QAction::triggered, KateApp::self()->documentManager(), [this]() {
-        KTextEditor::View *view = viewManager()->activeView();
-        KateFileActions::copyFilePathToClipboard(view->document());
+        if (auto view = viewManager()->activeView())
+            KateFileActions::copyFilePathToClipboard(view->document());
+    });
+    a->setWhatsThis(i18n("Copies the file path of the current file to clipboard."));
+
+    a = ac->addAction(QStringLiteral("file_copy_filename"));
+    a->setIcon(QIcon::fromTheme(QStringLiteral("edit-copy")));
+    a->setText(i18n("Copy Filename"));
+    connect(a, &QAction::triggered, KateApp::self()->documentManager(), [this]() {
+        if (auto view = viewManager()->activeView())
+            KateFileActions::copyFileNameToClipboard(view->document());
     });
     a->setWhatsThis(i18n("Copies the file path of the current file to clipboard."));
 
@@ -425,8 +455,8 @@ void KateMainWindow::setupActions()
     a->setIcon(QIcon::fromTheme(QStringLiteral("document-open-folder")));
     a->setText(i18n("&Open Containing Folder"));
     connect(a, &QAction::triggered, KateApp::self()->documentManager(), [this]() {
-        KTextEditor::View *view = viewManager()->activeView();
-        KateFileActions::openContainingFolder(view->document());
+        if (auto view = viewManager()->activeView())
+            KateFileActions::openContainingFolder(view->document());
     });
     a->setWhatsThis(i18n("Copies the file path of the current file to clipboard."));
 
@@ -434,8 +464,8 @@ void KateMainWindow::setupActions()
     a->setIcon(QIcon::fromTheme(QStringLiteral("edit-rename")));
     a->setText(i18nc("@action:inmenu", "Rename..."));
     connect(a, &QAction::triggered, KateApp::self()->documentManager(), [this]() {
-        KTextEditor::View *view = viewManager()->activeView();
-        KateFileActions::renameDocumentFile(this, view->document());
+        if (auto view = viewManager()->activeView())
+            KateFileActions::renameDocumentFile(this, view->document());
     });
     a->setWhatsThis(i18n("Renames the file belonging to the current document."));
 
@@ -443,8 +473,8 @@ void KateMainWindow::setupActions()
     a->setIcon(QIcon::fromTheme(QStringLiteral("edit-delete")));
     a->setText(i18nc("@action:inmenu", "Delete"));
     connect(a, &QAction::triggered, KateApp::self()->documentManager(), [this]() {
-        KTextEditor::View *view = viewManager()->activeView();
-        KateFileActions::deleteDocumentFile(this, view->document());
+        if (auto view = viewManager()->activeView())
+            KateFileActions::deleteDocumentFile(this, view->document());
     });
     a->setWhatsThis(i18n("Deletes the file belonging to the current document."));
 
@@ -452,8 +482,8 @@ void KateMainWindow::setupActions()
     a->setIcon(QIcon::fromTheme(QStringLiteral("dialog-object-properties")));
     a->setText(i18n("Properties"));
     connect(a, &QAction::triggered, KateApp::self()->documentManager(), [this]() {
-        KTextEditor::View *view = viewManager()->activeView();
-        KateFileActions::openFilePropertiesDialog(this, view->document());
+        if (auto view = viewManager()->activeView())
+            KateFileActions::openFilePropertiesDialog(this, view->document());
     });
     a->setWhatsThis(i18n("Deletes the file belonging to the current document."));
 
@@ -622,6 +652,49 @@ void KateMainWindow::setupActions()
             if (url.isValid() && url.isLocalFile()) {
                 FileHistory::showFileHistory(url.toLocalFile(), m_wrapper);
             }
+        }
+    });
+
+    // add menu to get quick access to all open Kate windows
+    auto windows = new KActionMenu(i18n("&Windows"), this);
+    ac->addAction(QStringLiteral("view_windows"), windows);
+    QActionGroup *windowsGroup = new QActionGroup(windows);
+    connect(windows->menu(), &QMenu::aboutToShow, this, [this, windows, windowsGroup]() {
+        windows->menu()->clear();
+        const auto windowList = KateApp::self()->kateMainWindows();
+        for (auto win : windowList) {
+            auto a = windows->menu()->addAction(win->window()->windowTitle());
+            a->setData(QVariant::fromValue(win));
+            a->setCheckable(true);
+            a->setActionGroup(windowsGroup);
+            if (win == this) {
+                a->setChecked(true);
+            }
+        }
+    });
+    connect(windows->menu(), &QMenu::triggered, this, [this](QAction *a) {
+        if (auto win = a->data().value<KateMainWindow *>()) {
+#if HAVE_WAYLAND
+            // on wayland we need to get an activation token
+            if (KWindowSystem::isPlatformWayland()) {
+                const int launchedSerial = KWaylandExtras::self()->lastInputSerial(this->windowHandle());
+                QObject::connect(
+                    KWaylandExtras::self(),
+                    &KWaylandExtras::xdgActivationTokenArrived,
+                    win,
+                    [launchedSerial, win](int serial, const QString &token) {
+                        if (serial == launchedSerial) {
+                            win->activate(token);
+                        }
+                    },
+                    Qt::SingleShotConnection);
+                KWaylandExtras::requestXdgActivationToken(this->windowHandle(), launchedSerial, {});
+                return;
+            }
+#endif
+
+            // else: normal activate without a token
+            win->activate();
         }
     });
 }
@@ -1021,6 +1094,7 @@ void KateMainWindow::slotUpdateActionsNeedingUrl()
     const bool hasUrl = view && !view->document()->url().isEmpty();
 
     action(QStringLiteral("file_copy_filepath"))->setEnabled(hasUrl);
+    action(QStringLiteral("file_copy_filename"))->setEnabled(hasUrl);
     action(QStringLiteral("file_open_containing_folder"))->setEnabled(hasUrl);
     action(QStringLiteral("file_rename"))->setEnabled(hasUrl);
     action(QStringLiteral("file_delete"))->setEnabled(hasUrl);
@@ -1687,6 +1761,40 @@ void KateMainWindow::onApplicationStateChanged(Qt::ApplicationState)
             delete s_modOnHdDialog;
         });
     }
+}
+
+void KateMainWindow::activate(const QString &token)
+{
+    // if we got a token, use it
+    if (!token.isEmpty()) {
+        // try to raise window, see bug 407288
+        if (KWindowSystem::isPlatformWayland()) {
+            KWindowSystem::setCurrentXdgActivationToken(token);
+        }
+
+#if HAVE_X11
+        if (KWindowSystem::isPlatformX11()) {
+            KStartupInfo::setNewStartupId(windowHandle(), token.toUtf8());
+        }
+#endif
+    }
+
+    KWindowSystem::activateWindow(windowHandle());
+
+#if defined(Q_OS_WIN)
+    // more work on Windows to raise the window
+    // in main.cpp we allow that for the secondary app in Kate
+    const auto winHandle = (HWND)windowHandle()->winId();
+    if (::IsIconic(winHandle)) {
+        ::ShowWindow(winHandle, SW_RESTORE);
+    }
+    ::SetForegroundWindow(winHandle);
+#endif
+
+    // like QtSingleApplication
+    setWindowState(windowState() & ~Qt::WindowMinimized);
+    raise();
+    activateWindow();
 }
 
 #include "moc_katemainwindow.cpp"
