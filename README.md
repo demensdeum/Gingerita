@@ -1,3 +1,7 @@
 Gingerita is [Kate](https://github.com/KDE/kate) fork
 
 ![Icon.png](Icon.png)
+
+New features:
+
+* Kate Web Browser plugin: https://github.com/demensdeum/kate-browser-plugin
