@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kategdbplugin\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-02-27 00:43+0000\n"
-"PO-Revision-Date: 2025-02-26 09:57+0200\n"
+"POT-Creation-Date: 2025-04-13 00:43+0000\n"
+"PO-Revision-Date: 2025-04-13 09:11+0300\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <trans-uk@lists.fedoraproject.org>\n"
 "Language: uk\n"
@@ -95,6 +95,16 @@ msgstr "Переспрямувати діагностичні дані прог�
 #, kde-format
 msgid "Target %1"
 msgstr "Призначення %1"
+
+#: configview.cpp:694
+#, kde-format
+msgid "Select Executable"
+msgstr "Виберіть виконуваний файл"
+
+#: configview.cpp:707
+#, kde-format
+msgid "Select Working Directory"
+msgstr "Виберіть робочий каталог"
 
 #: dapbackend.cpp:182
 #, kde-format
@@ -861,6 +871,3 @@ msgstr "Додаток діагностики"
 
 #~ msgid "Add Working Directory"
 #~ msgstr "Додати робочий каталог"
-
-#~ msgid "Remove Working Directory"
-#~ msgstr "Вилучити робочий каталог"

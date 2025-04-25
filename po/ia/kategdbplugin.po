@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-02-27 00:43+0000\n"
-"PO-Revision-Date: 2025-02-26 10:03+0100\n"
+"POT-Creation-Date: 2025-04-13 00:43+0000\n"
+"PO-Revision-Date: 2025-04-15 15:13+0200\n"
 "Last-Translator: giovanni <g.sora@tiscali.it>\n"
 "Language-Team: Interlingua <kde-i18n-doc@kde.org>\n"
 "Language: ia\n"
@@ -92,6 +92,16 @@ msgstr "Re-dirige le IE (IO) de programma cribrate a un scheda separate"
 #, kde-format
 msgid "Target %1"
 msgstr "Objectivo %1"
+
+#: configview.cpp:694
+#, kde-format
+msgid "Select Executable"
+msgstr "Selectiona  executabile"
+
+#: configview.cpp:707
+#, kde-format
+msgid "Select Working Directory"
+msgstr "Selectiona directorio de travalio"
 
 #: dapbackend.cpp:182
 #, kde-format
@@ -857,6 +867,3 @@ msgstr "Plugin de Debug (Cribrar)"
 
 #~ msgid "Add Working Directory"
 #~ msgstr "Adde directorio de travalio"
-
-#~ msgid "Remove Working Directory"
-#~ msgstr "remove directorio de travalio"
