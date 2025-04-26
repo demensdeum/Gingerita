@@ -34,3 +34,9 @@ CMakeLists.txt.user*
 .flatpak/
 .flatpak-builder/
 /_build/
+cmake_install.cmake
+CMakeCache.txt
+CTestTestfile.cmake
+Makefile
+addons/backtracebrowser/ui_btbrowserwidget.h
+addons/backtracebrowser/ui_btconfigwidget.h

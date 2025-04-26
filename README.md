@@ -5,3 +5,4 @@ Gingerita is [Kate](https://github.com/KDE/kate) fork
 New features:
 
 * Kate Web Browser plugin: https://github.com/demensdeum/kate-browser-plugin
+* Kate Image Preview plugin: https://github.com/demensdeum/kate-image-preview-plugin
