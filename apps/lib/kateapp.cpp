@@ -330,6 +330,7 @@ KateApp *KateApp::self()
 
 void KateApp::fillAuthorsAndCredits(KAboutData &aboutData)
 {
+    aboutData.addAuthor(i18n("Ilia Prokhorov"), i18n("Gingerita Developer"), QStringLiteral("demensdeum@gmail.com"), QStringLiteral("https://demensdeum.com"));
     aboutData.addAuthor(i18n("Christoph Cullmann"), i18n("Maintainer"), QStringLiteral("cullmann@kde.org"), QStringLiteral("https://cullmann.io"));
     aboutData.addAuthor(i18n("Dominik Haumann"), i18n("Core Developer"), QStringLiteral("dhaumann@kde.org"));
     aboutData.addAuthor(i18n("Sven Brauch"), i18n("Developer"), QStringLiteral("mail@svenbrauch.de"));

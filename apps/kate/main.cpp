@@ -109,21 +109,21 @@ int main(int argc, char **argv)
      * Enforce application name even if the executable is renamed
      * Connect application with translation catalogs, Kate & KWrite share the same one
      */
-    QApplication::setApplicationName(QStringLiteral("kate"));
-    KLocalizedString::setApplicationDomain(QByteArrayLiteral("kate"));
+    QApplication::setApplicationName(QStringLiteral("Gingerita"));
+    KLocalizedString::setApplicationDomain(QByteArrayLiteral("gingerita"));
 
     /**
      * construct about data for Kate
      */
-    KAboutData aboutData(QStringLiteral("kate"),
-                         i18n("Kate"),
+    KAboutData aboutData(QStringLiteral("gingerita"),
+                         i18n("Gingerita"),
                          QStringLiteral(KATE_VERSION),
-                         i18n("Kate - Advanced Text Editor"),
+                         i18n("Gingerita - Advanced Text Editor"),
                          KAboutLicense::LGPL_V2,
-                         i18n("(c) 2000-2024 The Kate Authors"),
+                         i18n("(c) 2000-2025 The Kate/Gingerita Authors"),
                          // use the other text field to get our mascot into the about dialog
                          QStringLiteral("<img height=\"362\" width=\"512\" src=\":/kate/mascot.png\"/>"),
-                         QStringLiteral("https://kate-editor.org"));
+                         QStringLiteral("https://github.com/demensdeum/Gingerita"));
 
     /**
      * right dbus prefix == org.kde.
