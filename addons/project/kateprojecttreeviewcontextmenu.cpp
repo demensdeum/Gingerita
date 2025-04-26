@@ -54,6 +54,24 @@ static QString getName(QWidget *parent, const QString &title)
     return dlg.textValue();
 }
 
+static QString getNameRename(QWidget *parent, const QString &title, const QString &currentName = QString())
+{
+    QInputDialog dlg(parent);
+    dlg.setWindowTitle(title);
+    dlg.setLabelText(i18n("Enter name:"));
+    dlg.setInputMode(QInputDialog::TextInput);
+    dlg.setTextValue(currentName); // <-- ВАЖНО: сюда ставим текущее имя!
+    dlg.resize(400, dlg.height());
+
+    int res = dlg.exec();
+    bool suc = res == QDialog::Accepted;
+    if (!suc || dlg.textValue().isEmpty()) {
+        return {};
+    }
+    return dlg.textValue();
+}
+
+
 static void onDeleteFile(const QModelIndex &index, const QString &path, KateProjectViewTree *parent)
 {
     if (!index.isValid())
@@ -98,10 +116,11 @@ void KateProjectTreeViewContextMenu::exec(const QString &filename, const QModelI
         addFolder = menu.addAction(QIcon::fromTheme(QStringLiteral("folder-new")), i18n("New Folder…"));
     }
 
-    // we can ATM only handle file renames
     QAction *rename = nullptr;
     QAction *fileDelete = nullptr;
-    if (index.data(KateProjectItem::TypeRole).toInt() == KateProjectItem::File) {
+
+    if (index.data(KateProjectItem::TypeRole).toInt() == KateProjectItem::File ||
+            index.data(KateProjectItem::TypeRole).toInt() == KateProjectItem::Directory) {
         rename = menu.addAction(QIcon::fromTheme(QStringLiteral("edit-rename")), i18n("&Rename"));
         fileDelete = menu.addAction(QIcon::fromTheme(QStringLiteral("delete")), i18n("Delete"));
     }
@@ -192,19 +211,29 @@ void KateProjectTreeViewContextMenu::exec(const QString &filename, const QModelI
             if (!index.isValid()) {
                 return;
             }
-            /**
-             * hack:
-             * We store a reference to project in the item so that
-             * after rename we can update file2Item map properly.
-             */
-            KateProjectItem *item = parent->project()->itemForFile(index.data(Qt::UserRole).toString());
-            if (!item) {
+
+            const QString oldPath = index.data(Qt::UserRole).toString();
+            const QFileInfo oldInfo(oldPath);
+
+            const QString newName = getNameRename(parent, i18n("Rename"), oldInfo.fileName());
+            if (newName.isEmpty()) {
                 return;
             }
-            item->setData(QVariant::fromValue(parent->project()), KateProjectItem::ProjectRole);
 
-            /** start the edit */
-            parent->edit(index);
+            const QDir parentDir = oldInfo.dir();
+            const QString newPath = parentDir.filePath(newName);
+
+            if (QFileInfo::exists(newPath)) {
+                QMessageBox::warning(parent, i18n("Rename"), i18n("A file or folder with that name already exists."));
+                return;
+            }
+
+            if (!QFile::rename(oldPath, newPath)) {
+                QMessageBox::warning(parent, i18n("Rename"), i18n("Failed to rename."));
+                return;
+            }
+
+            parent->project()->reload(true);
         } else if (action == fileHistory) {
             FileHistory::showFileHistory(index.data(Qt::UserRole).toString());
         } else if (addFile && action == addFile) {
