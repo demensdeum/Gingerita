@@ -1,6 +1,6 @@
 Gingerita is [Kate](https://github.com/KDE/kate) fork
 
-![Icon.png](Icon.png)
+![screenshot.jpg](screenshot.jpg)
 
 New features:
 
