@@ -1,4 +1,12 @@
+#!/bin/bash
+
+if [ -z "$KDEROOT" ]; then
+    echo "Error: Craft environment is not loaded. Please run 'source ~/CraftRoot/craft/craftenv.sh' first."
+    exit 1
+fi
+
+rm -rfv ~/Sources/DemensDeum/Gingerita/bin/kate.app
+
 rm -rfv $(find . -name 'CMakeFiles' -o -name 'cmake_install.cmake')
-cmake .
+cmake -DCMAKE_BUILD_TYPE=Debug .
 make
-cp -vf bin/kf6/ktexteditor/*.so ~/CraftRoot/plugins/kf6/ktexteditor/
