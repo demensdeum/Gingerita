@@ -12,7 +12,7 @@ Build for MacOS:
 
 * Install CraftRoot into ~/CraftRoot
 * checkout Gingerita repo
-* source ~/CraftRoot/craft/craft.env
+* source ~/CraftRoot/craft/craftenv.sh
 * cmake .
 * make
 * open bin/kate.app
