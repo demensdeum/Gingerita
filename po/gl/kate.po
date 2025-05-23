@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kate\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-05-10 00:45+0000\n"
-"PO-Revision-Date: 2025-05-04 13:40+0200\n"
+"POT-Creation-Date: 2025-05-21 00:45+0000\n"
+"PO-Revision-Date: 2025-05-16 11:22+0200\n"
 "Last-Translator: Adrián Chaves (Gallaecio) <adrian@chaves.gal>\n"
 "Language-Team: Proxecto Trasno (proxecto@trasno.gal)\n"
 "Language: gl\n"
@@ -449,11 +449,9 @@ msgid "Raw"
 msgstr "Cru"
 
 #: lib/diff/diffeditor.cpp:214
-#, fuzzy, kde-format
-#| msgid "Stage Line"
-#| msgid_plural "Stage Lines"
+#, kde-format
 msgid "Edit Line"
-msgstr "Apartar a liña"
+msgstr "Editar a liña"
 
 #: lib/diff/diffeditor.cpp:253
 #, kde-format
@@ -2193,13 +2191,13 @@ msgstr ""
 "Non foi posíbel escribir os datos que pediu gardar. Escolla como quere "
 "proceder."
 
-#: lib/kateurlbar.cpp:913
+#: lib/kateurlbar.cpp:919
 #, kde-format
 msgctxt "@menu:action"
 msgid "Copy Location"
 msgstr "Copiar a localización"
 
-#: lib/kateurlbar.cpp:918
+#: lib/kateurlbar.cpp:925
 #, kde-format
 msgctxt "@menu:action"
 msgid "Copy Filename"

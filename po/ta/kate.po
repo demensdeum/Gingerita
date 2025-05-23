@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kate\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-05-10 00:45+0000\n"
-"PO-Revision-Date: 2025-04-20 18:08+0530\n"
+"POT-Creation-Date: 2025-05-21 00:45+0000\n"
+"PO-Revision-Date: 2025-05-18 20:22+0530\n"
 "Last-Translator: Kishore G <kishore96@gmail.com>\n"
 "Language-Team: Tamil <kde-i18n-doc@kde.org>\n"
 "Language: ta\n"
@@ -21,7 +21,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Lokalize 25.04.0\n"
+"X-Generator: Lokalize 25.04.1\n"
 
 #, kde-format
 msgctxt "NAME OF TRANSLATORS"
@@ -448,11 +448,9 @@ msgid "Raw"
 msgstr "வடிவூட்டாமல்"
 
 #: lib/diff/diffeditor.cpp:214
-#, fuzzy, kde-format
-#| msgid "Stage Line"
-#| msgid_plural "Stage Lines"
+#, kde-format
 msgid "Edit Line"
-msgstr "வரியை ஏற்றரங்கில் செர்"
+msgstr "வரியை திருத்து"
 
 #: lib/diff/diffeditor.cpp:253
 #, kde-format
@@ -2177,13 +2175,13 @@ msgstr ""
 "நீங்கள் சேமிக்க விரும்பியவற்றை எழுத முடியவில்லை. எப்படி தொடர வேண்டும் என்பதை "
 "தேர்ந்தெடுக்கவும்."
 
-#: lib/kateurlbar.cpp:913
+#: lib/kateurlbar.cpp:919
 #, kde-format
 msgctxt "@menu:action"
 msgid "Copy Location"
 msgstr "இருப்பிடத்தை நகலெடு"
 
-#: lib/kateurlbar.cpp:918
+#: lib/kateurlbar.cpp:925
 #, kde-format
 msgctxt "@menu:action"
 msgid "Copy Filename"

@@ -15,8 +15,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kate\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-05-10 00:45+0000\n"
-"PO-Revision-Date: 2025-04-20 15:07+0900\n"
+"POT-Creation-Date: 2025-05-21 00:45+0000\n"
+"PO-Revision-Date: 2025-05-16 15:30+0900\n"
 "Last-Translator: Kisaragi Hiu <mail@kisaragi-hiu.com>\n"
 "Language-Team: Traditional Chinese <zh-l10n@lists.slat.org>\n"
 "Language: zh_TW\n"
@@ -444,11 +444,9 @@ msgid "Raw"
 msgstr "原始"
 
 #: lib/diff/diffeditor.cpp:214
-#, fuzzy, kde-format
-#| msgid "Stage Line"
-#| msgid_plural "Stage Lines"
+#, kde-format
 msgid "Edit Line"
-msgstr "暫存行"
+msgstr "編輯行"
 
 #: lib/diff/diffeditor.cpp:253
 #, kde-format
@@ -2134,13 +2132,13 @@ msgid ""
 "want to proceed."
 msgstr "無法寫入要求儲存的資料。請選擇您要如何繼續。"
 
-#: lib/kateurlbar.cpp:913
+#: lib/kateurlbar.cpp:919
 #, kde-format
 msgctxt "@menu:action"
 msgid "Copy Location"
 msgstr "複製位置"
 
-#: lib/kateurlbar.cpp:918
+#: lib/kateurlbar.cpp:925
 #, kde-format
 msgctxt "@menu:action"
 msgid "Copy Filename"
