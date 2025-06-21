@@ -159,11 +159,12 @@ void SnippetRepository::remove()
 
 /// copied code from snippets_tng/lib/completionmodel.cpp
 ///@copyright 2009 Joseph Wenninger <jowenn@kde.org>
-static void addAndCreateElement(QDomDocument &doc, QDomElement &item, const QString &name, const QString &content)
+static QDomElement addAndCreateElement(QDomDocument &doc, QDomElement &item, const QString &name, const QString &content)
 {
     QDomElement element = doc.createElement(name);
     element.appendChild(doc.createTextNode(content));
     item.appendChild(element);
+    return element;
 }
 
 void SnippetRepository::save()
@@ -209,7 +210,8 @@ void SnippetRepository::save()
         }
         QDomElement item = doc.createElement(QStringLiteral("item"));
         addAndCreateElement(doc, item, QStringLiteral("match"), snippet->text());
-        addAndCreateElement(doc, item, QStringLiteral("fillin"), snippet->snippet());
+        auto e = addAndCreateElement(doc, item, QStringLiteral("fillin"), snippet->snippet());
+        e.setAttribute(QStringLiteral("type"), Snippet::typeToString(snippet->snippetType()));
         root.appendChild(item);
     }
     // KMessageBox::information(0,doc.toString());
@@ -311,6 +313,8 @@ void SnippetRepository::parseFile()
             continue;
         }
         auto *snippet = new Snippet;
+        QString script, description;
+        Snippet::SnippetType type;
         const QDomNodeList &children = node.childNodes();
         for (int j = 0; j < children.size(); ++j) {
             const QDomNode &childNode = children.at(j);
@@ -321,9 +325,14 @@ void SnippetRepository::parseFile()
             if (child.tagName() == QLatin1String("match")) {
                 snippet->setText(child.text());
             } else if (child.tagName() == QLatin1String("fillin")) {
-                snippet->setSnippet(child.text());
+                const auto e = child.toElement();
+                script = child.text();
+                type = Snippet::stringToType(e.attribute(QLatin1String("type")));
+            } else if (child.tagName() == QLatin1String("description")) {
+                description = child.text();
             }
         }
+        snippet->setSnippet(script, description, type);
         // require at least a non-empty name and snippet
         if (snippet->text().isEmpty() || snippet->snippet().isEmpty()) {
             delete snippet;

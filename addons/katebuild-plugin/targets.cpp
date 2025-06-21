@@ -75,8 +75,8 @@ TargetsUi::TargetsUi(QObject *view, QWidget *parent)
     targetsView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     targetsView->header()->setSectionResizeMode(1, QHeaderView::Interactive);
     targetsView->header()->setSectionResizeMode(2, QHeaderView::Interactive);
-    auto *tLayout = new QHBoxLayout();
 
+    auto *tLayout = new QHBoxLayout();
     tLayout->addWidget(targetFilterEdit);
     tLayout->addWidget(buildButton);
     tLayout->addWidget(runButton);
@@ -246,8 +246,13 @@ void TargetsUi::targetSetNew()
     targetFilterEdit->setText(QString());
     QModelIndex currentIndex = proxyModel.mapToSource(targetsView->currentIndex());
     QString workingDir = QDir::homePath();
+    QString projDir;
+    if (currentIndex.data(TargetModel::IsProjectTargetRole).toBool()) {
+        workingDir = currentProjectBaseDir + u"/build"_s;
+        projDir = currentProjectBaseDir;
+    }
 
-    QModelIndex index = targetsModel.insertTargetSetAfter(currentIndex, i18n("Target Set"), workingDir);
+    QModelIndex index = targetsModel.insertTargetSetAfter(currentIndex, i18n("Target Set"), workingDir, false, QString(), projDir);
     index = targetsModel.addCommandAfter(index, i18nc("Name/Label for a command to configure a build", "Configure"), configCmd, QString());
     index = targetsModel.addCommandAfter(index, i18nc("Name/Label for a compilation or build command", "Build Command"), buildCmd, runCmd);
     index = proxyModel.mapFromSource(index);

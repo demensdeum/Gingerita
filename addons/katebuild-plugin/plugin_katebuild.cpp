@@ -455,7 +455,7 @@ KateBuildView::KateBuildView(KateBuildPlugin *plugin, KTextEditor::MainWindow *m
     updateEditorColors(KTextEditor::Editor::instance());
     connect(KTextEditor::Editor::instance(), &KTextEditor::Editor::configChanged, this, updateEditorColors);
 
-    connect(m_buildUi.buildAgainButton, &QPushButton::clicked, this, &KateBuildView::slotBuildPreviousTarget);
+    connect(m_buildUi.buildAgainButton, &QPushButton::clicked, this, &KateBuildView::slotReBuildPreviousTarget);
     connect(m_buildUi.cancelBuildButton, &QPushButton::clicked, this, &KateBuildView::slotStop);
 
     connect(m_buildUi.searchPattern, &QLineEdit::editingFinished, this, &KateBuildView::slotSearchBuildOutput);
@@ -534,8 +534,8 @@ KateBuildView::~KateBuildView()
 /******************************************************************/
 void KateBuildView::readSessionConfig(const KConfigGroup &cg)
 {
-    int numTargets = cg.readEntry(QStringLiteral("NumTargets"), 0);
-    m_projectTargetsetRow = cg.readEntry("ProjectTargetSetRow", 0);
+    int numTargets = cg.readEntry(u"NumTargets"_s, 0);
+    m_projectTargetsetRow = cg.readEntry(u"ProjectTargetSetRow"_s, 0);
     m_targetsUi->targetsModel.clear(m_projectTargetsetRow > 0);
 
     QModelIndex setIndex = m_targetsUi->targetsModel.sessionRootIndex();
@@ -579,13 +579,17 @@ void KateBuildView::readSessionConfig(const KConfigGroup &cg)
     updateProjectTargets();
 
     // pre-select the last active target or the first target of the first set
-    int prevTargetSetRow = cg.readEntry(QStringLiteral("Active Target Index"), 0);
-    int prevCmdRow = cg.readEntry(QStringLiteral("Active Target Command"), 0);
-    QModelIndex rootIndex = m_targetsUi->targetsModel.index(prevTargetSetRow);
-    QModelIndex cmdIndex = m_targetsUi->targetsModel.index(prevCmdRow, 0, rootIndex);
-    cmdIndex = m_targetsUi->proxyModel.mapFromSource(cmdIndex);
-    m_targetsUi->targetsView->setCurrentIndex(cmdIndex);
-
+    const QVector<int> treePath = cg.readEntry(u"Active Target Index Tree"_s, QVector<int>{0, 0, 0});
+    QModelIndex activeIndex;
+    for (const int row : treePath) {
+        const auto idx = m_targetsUi->targetsModel.index(row, 0, activeIndex);
+        if (idx.isValid()) {
+            activeIndex = idx;
+        }
+    }
+    activeIndex = m_targetsUi->proxyModel.mapFromSource(activeIndex);
+    m_targetsUi->targetsView->setCurrentIndex(activeIndex);
+    m_targetsUi->targetsView->scrollTo(activeIndex);
     m_targetsUi->updateTargetsButtonStates();
 }
 
@@ -596,13 +600,13 @@ void KateBuildView::writeSessionConfig(KConfigGroup &cg)
     QModelIndex activeIndex = m_targetsUi->targetsView->currentIndex();
     activeIndex = m_targetsUi->proxyModel.mapToSource(activeIndex);
     if (activeIndex.isValid()) {
-        if (activeIndex.parent().isValid()) {
-            cg.writeEntry(QStringLiteral("Active Target Index"), activeIndex.parent().row());
-            cg.writeEntry(QStringLiteral("Active Target Command"), activeIndex.row());
-        } else {
-            cg.writeEntry(QStringLiteral("Active Target Index"), activeIndex.row());
-            cg.writeEntry(QStringLiteral("Active Target Command"), 0);
+        QVector<int> treePath;
+        treePath.prepend(activeIndex.row());
+        while (activeIndex.parent().isValid()) {
+            activeIndex = activeIndex.parent();
+            treePath.prepend(activeIndex.row());
         }
+        cg.writeEntry(u"Active Target Index Tree"_s, treePath);
     }
 
     // Don't save project target-sets, but save the root-row index
@@ -844,9 +848,14 @@ bool KateBuildView::slotStop()
 {
     if (m_proc.state() != QProcess::NotRunning) {
         m_buildCancelled = true;
-        QString msg = i18n("Building <b>%1</b> cancelled", m_currentlyBuildingTarget);
+        QString msg = i18n("Building <b>%1: %2</b> cancelled", m_buildTargetSetName, m_buildTargetName);
         m_buildUi.buildStatusLabel->setText(msg);
         terminateProcess(m_proc);
+        m_buildTargetSetName.clear();
+        m_buildTargetName.clear();
+        m_buildBuildCmd.clear();
+        m_buildRunCmd.clear();
+        m_buildWorkDir.clear();
         return true;
     }
     return false;
@@ -966,61 +975,151 @@ void KateBuildView::slotCompileCurrentFile()
 }
 
 /******************************************************************/
-void KateBuildView::slotBuildSelectedTarget()
+std::optional<QString> KateBuildView::cmdSubstitutionsApplied(const QString &command, const QFileInfo &docFInfo, const QString &workDir)
 {
+    QString cmd = command;
+
+    // When adding new placeholders, also update the tooltip in TargetHtmlDelegate::createEditor()
+    if (docFInfo.absoluteFilePath().isEmpty()) {
+        if (cmd.contains(u"%f"_s)) {
+            displayMessage(i18n("Cannot make \"%f\" substitution. No open file or the current file is untitled!"), KTextEditor::Message::Error);
+            return std::nullopt;
+        }
+        if (cmd.contains(u"%d"_s)) {
+            displayMessage(i18n("Cannot make \"%d\" substitution. No open file or the current file is untitled!"), KTextEditor::Message::Error);
+            return std::nullopt;
+        }
+        if (cmd.contains(u"%n"_s)) {
+            displayMessage(i18n("Cannot make \"%n\" substitution. No open file or the current file is untitled!"), KTextEditor::Message::Error);
+            return std::nullopt;
+        }
+        cmd.replace(u"%n"_s, docFInfo.baseName());
+        cmd.replace(u"%f"_s, docFInfo.absoluteFilePath());
+        cmd.replace(u"%d"_s, docFInfo.absolutePath());
+    }
+
+    if (cmd.contains(u"%B"_s)) {
+        if (m_targetsUi->currentProjectBaseDir.isEmpty()) {
+            displayMessage(i18n("Cannot make project substitution (%B). No open project!"), KTextEditor::Message::Error);
+            return std::nullopt;
+        }
+        cmd.replace(u"%B"_s, docFInfo.absolutePath());
+    }
+    cmd.replace(u"%w"_s, workDir);
+    return cmd;
+}
+
+/******************************************************************/
+bool KateBuildView::trySetCommands()
+{
+    if (m_proc.state() != QProcess::NotRunning) {
+        displayMessage(i18n("Already building..."), KTextEditor::Message::Warning);
+        return false;
+    }
+
     QModelIndex currentIndex = m_targetsUi->targetsView->currentIndex();
     if (!currentIndex.isValid() || (m_firstBuild && !m_targetsUi->targetsView->isVisible())) {
         slotSelectTarget();
-        return;
+        return false;
     }
-    m_firstBuild = false;
 
-    if (!currentIndex.parent().isValid()) {
-        // This is a root item, try to build the first command
-        currentIndex = m_targetsUi->targetsView->model()->index(0, 0, currentIndex.siblingAtColumn(0));
-        if (currentIndex.isValid()) {
-            m_targetsUi->targetsView->setCurrentIndex(currentIndex);
-        } else {
-            slotSelectTarget();
-            return;
+    // If the index is not a "command row" open the target selection. The first child/command, might not be the
+    // intended command
+    if (currentIndex.data(TargetModel::RowTypeRole).toInt() != TargetModel::CommandRow) {
+        m_targetsUi->targetsView->expand(currentIndex);
+        if (currentIndex.data(TargetModel::RowTypeRole).toInt() == TargetModel::RootRow) {
+            m_targetsUi->targetsView->expand(currentIndex);
+            currentIndex = m_targetsUi->targetsView->model()->index(0, 0, currentIndex.siblingAtColumn(0));
+        }
+        if (currentIndex.data(TargetModel::RowTypeRole).toInt() == TargetModel::TargetSetRow) {
+            m_targetsUi->targetsView->expand(currentIndex);
+            currentIndex = m_targetsUi->targetsView->model()->index(0, 0, currentIndex.siblingAtColumn(0));
+        }
+        m_targetsUi->targetsView->setCurrentIndex(currentIndex);
+        slotSelectTarget();
+        return false;
+    }
+
+    // Now we have a command index
+    const QFileInfo docFInfo(docUrl().toLocalFile()); // docUrl() saves the current document
+
+    m_buildTargetSetName = currentIndex.data(TargetModel::TargetSetNameRole).toString();
+    m_buildTargetName = currentIndex.data(TargetModel::CommandNameRole).toString();
+
+    m_buildWorkDir = currentIndex.data(TargetModel::WorkDirRole).toString();
+    m_buildWorkDir = parseWorkDir(m_buildWorkDir);
+    if (m_buildWorkDir.isEmpty()) {
+        m_buildWorkDir = docFInfo.absolutePath();
+        if (m_buildWorkDir.isEmpty()) {
+            displayMessage(i18n("Cannot execute: %1: %2 No working directory set.\n"
+                                "There is no local file or directory specified for building.",
+                                m_buildTargetSetName,
+                                m_buildTargetName),
+                           KTextEditor::Message::Error);
+            return false;
         }
     }
-    buildCurrentTarget();
+
+    // Build command
+    m_buildBuildCmd = currentIndex.data(TargetModel::CommandRole).toString();
+    auto buildCmd = cmdSubstitutionsApplied(m_buildBuildCmd, docFInfo, m_buildWorkDir);
+    if (!buildCmd.has_value()) {
+        m_buildBuildCmd.clear();
+        slotSelectTarget();
+        return false;
+    }
+    m_buildBuildCmd = buildCmd.value();
+
+    // Run Command
+    m_buildRunCmd = currentIndex.data(TargetModel::RunCommandRole).toString();
+    auto runCmd = cmdSubstitutionsApplied(m_buildRunCmd, docFInfo, m_buildWorkDir);
+    if (!runCmd.has_value()) {
+        m_buildBuildCmd.clear();
+        m_buildRunCmd.clear();
+        slotSelectTarget();
+        return false;
+    }
+    m_buildRunCmd = runCmd.value();
+
+    m_searchPaths = currentIndex.data(TargetModel::SearchPathsRole).toStringList();
+    return true;
+}
+
+/******************************************************************/
+void KateBuildView::slotBuildSelectedTarget()
+{
+    if (!trySetCommands()) {
+        return;
+    }
+
+    // don't execute the run command
+    m_buildRunCmd.clear();
+    if (m_buildBuildCmd.isEmpty()) {
+        // We don't have a command to run so open the target selection
+        slotSelectTarget();
+    }
+
+    buildSelectedTarget();
 }
 
 /******************************************************************/
 void KateBuildView::slotBuildAndRunSelectedTarget()
 {
-    QModelIndex currentIndex = m_targetsUi->targetsView->currentIndex();
-    if (!currentIndex.isValid() || (m_firstBuild && !m_targetsUi->targetsView->isVisible())) {
-        slotSelectTarget();
+    if (!trySetCommands()) {
         return;
     }
-    m_firstBuild = false;
 
-    if (!currentIndex.parent().isValid()) {
-        // This is a root item, try to build the first command
-        currentIndex = m_targetsUi->targetsView->model()->index(0, 0, currentIndex.siblingAtColumn(0));
-        if (currentIndex.isValid()) {
-            m_targetsUi->targetsView->setCurrentIndex(currentIndex);
-        } else {
-            slotSelectTarget();
-            return;
-        }
-    }
-
-    m_runAfterBuild = true;
-    buildCurrentTarget();
+    buildSelectedTarget();
 }
 
 /******************************************************************/
-void KateBuildView::slotBuildPreviousTarget()
+void KateBuildView::slotReBuildPreviousTarget()
 {
     if (!m_previousIndex.isValid()) {
         slotSelectTarget();
     } else {
         m_targetsUi->targetsView->setCurrentIndex(m_previousIndex);
-        buildCurrentTarget();
+        slotBuildSelectedTarget();
     }
 }
 
@@ -1057,59 +1156,19 @@ void KateBuildView::slotSelectTarget()
 }
 
 /******************************************************************/
-bool KateBuildView::buildCurrentTarget()
+void KateBuildView::buildSelectedTarget()
 {
-    const QFileInfo docFInfo(docUrl().toLocalFile()); // docUrl() saves the current document
-
-    QModelIndex ind = m_targetsUi->targetsView->currentIndex();
-    m_previousIndex = ind;
-    if (!ind.isValid()) {
-        sendError(i18n("No target available for building."));
-        return false;
-    }
-
-    QString buildCmd = ind.data(TargetModel::CommandRole).toString();
-    QString cmdName = ind.data(TargetModel::CommandNameRole).toString();
-    m_searchPaths = ind.data(TargetModel::SearchPathsRole).toStringList();
-    QString workDir = ind.data(TargetModel::WorkDirRole).toString();
-    QString targetSet = ind.data(TargetModel::TargetSetNameRole).toString();
-
-    QString dir = parseWorkDir(workDir);
-    if (workDir.isEmpty()) {
-        dir = docFInfo.absolutePath();
-        if (dir.isEmpty()) {
-            sendError(i18n("There is no local file or directory specified for building."));
-            return false;
-        }
-    }
-
-    if (m_proc.state() != QProcess::NotRunning) {
-        displayBuildResult(i18n("Already building..."), KTextEditor::Message::Warning);
-        return false;
-    }
-
-    if (m_runAfterBuild && buildCmd.isEmpty()) {
+    m_firstBuild = false;
+    m_previousIndex = m_targetsUi->targetsView->currentIndex();
+    if (m_buildBuildCmd.isEmpty()) {
         slotRunAfterBuild();
-        return true;
+        return;
     }
 
-    // Check if the command contains the file name or directory
-    // When adding new placeholders, also update the tooltip in TargetHtmlDelegate::createEditor()
-    if (buildCmd.contains(QLatin1String("%f")) || buildCmd.contains(QLatin1String("%d")) || buildCmd.contains(QLatin1String("%n"))) {
-        if (docFInfo.absoluteFilePath().isEmpty()) {
-            sendError(i18n("Cannot make substitution. No open file or the current file is untitled!"));
-            return false;
-        }
-
-        buildCmd.replace(QStringLiteral("%n"), docFInfo.baseName());
-        buildCmd.replace(QStringLiteral("%f"), docFInfo.absoluteFilePath());
-        buildCmd.replace(QStringLiteral("%d"), docFInfo.absolutePath());
-    }
-    m_currentlyBuildingTarget = QStringLiteral("%1: %2").arg(targetSet, cmdName);
     m_buildCancelled = false;
-    QString msg = i18n("Building target <b>%1</b> ...", m_currentlyBuildingTarget);
+    QString msg = i18n("Building target <b>%1: %2</b> ...", m_buildTargetSetName, m_buildTargetName);
     m_buildUi.buildStatusLabel->setText(msg);
-    return startProcess(dir, buildCmd);
+    startProcess(m_buildWorkDir, m_buildBuildCmd);
 }
 
 /******************************************************************/
@@ -1387,8 +1446,12 @@ void KateBuildView::slotProcExited(int exitCode, QProcess::ExitStatus)
     m_buildUi.buildAgainButton->setEnabled(true);
     delete m_progressMessage;
 
-    QString buildStatus =
-        i18n("Build <b>%1</b> completed. %2 error(s), %3 warning(s), %4 note(s)", m_currentlyBuildingTarget, m_numErrors, m_numWarnings, m_numNotes);
+    QString buildStatus = i18n("Build <b>%1: %2</b> completed. %3 error(s), %4 warning(s), %5 note(s)",
+                               m_buildTargetSetName,
+                               m_buildTargetName,
+                               m_numErrors,
+                               m_numWarnings,
+                               m_numNotes);
 
     bool buildSuccess = true;
     if (m_numErrors || m_numWarnings) {
@@ -1412,43 +1475,48 @@ void KateBuildView::slotProcExited(int exitCode, QProcess::ExitStatus)
     }
 
     if (m_buildCancelled) {
-        buildStatus =
-            i18n("Build <b>%1 canceled</b>. %2 error(s), %3 warning(s), %4 note(s)", m_currentlyBuildingTarget, m_numErrors, m_numWarnings, m_numNotes);
+        buildStatus = i18n("Build <b>%1: %2 canceled</b>. %3 error(s), %4 warning(s), %5 note(s)",
+                           m_buildTargetSetName,
+                           m_buildTargetName,
+                           m_numErrors,
+                           m_numWarnings,
+                           m_numNotes);
     }
     m_buildUi.buildStatusLabel->setText(buildStatus);
 
     m_pendingHtmlOutput += buildStatus;
 
-    if (buildSuccess && m_runAfterBuild) {
-        m_runAfterBuild = false;
+    m_buildBuildCmd.clear();
+    if (buildSuccess) {
         slotRunAfterBuild();
+    }
+}
+
+void KateBuildView::slotUpdateRunTabs()
+{
+    for (int i = 2; i < m_buildUi.u_tabWidget->count(); ++i) {
+        AppOutput *tabOut = qobject_cast<AppOutput *>(m_buildUi.u_tabWidget->widget(i));
+        if (!tabOut) {
+            continue;
+        }
+        if (!tabOut->runningProcess().isEmpty()) {
+            m_buildUi.u_tabWidget->setTabIcon(i, QIcon::fromTheme(QStringLiteral("media-playback-start")));
+        } else {
+            m_buildUi.u_tabWidget->setTabIcon(i, QIcon::fromTheme(QStringLiteral("media-playback-pause")));
+        }
     }
 }
 
 void KateBuildView::slotRunAfterBuild()
 {
-    if (!m_previousIndex.isValid()) {
+    if (m_buildRunCmd.isEmpty()) {
         return;
     }
-    QModelIndex idx = m_previousIndex;
-    QModelIndex runIdx = idx.siblingAtColumn(2);
-    const QString runCmd = runIdx.data().toString();
-    if (runCmd.isEmpty()) {
-        // Nothing to run, and not a problem
-        return;
-    }
-    const QString workDir = parseWorkDir(idx.data(TargetModel::WorkDirRole).toString());
-    if (workDir.isEmpty()) {
-        displayBuildResult(i18n("Cannot execute: %1 No working directory set.", runCmd), KTextEditor::Message::Warning);
-        return;
-    }
-    QModelIndex nameIdx = idx.siblingAtColumn(0);
-    QString name = nameIdx.data().toString();
 
     AppOutput *out = nullptr;
     for (int i = 2; i < m_buildUi.u_tabWidget->count(); ++i) {
         QString tabToolTip = m_buildUi.u_tabWidget->tabToolTip(i);
-        if (runCmd == tabToolTip) {
+        if (m_buildRunCmd == tabToolTip) {
             out = qobject_cast<AppOutput *>(m_buildUi.u_tabWidget->widget(i));
             if (!out || !out->runningProcess().isEmpty()) {
                 out = nullptr;
@@ -1462,33 +1530,29 @@ void KateBuildView::slotRunAfterBuild()
     if (!out) {
         // This is means we create a new tab
         out = new AppOutput();
-        int tabIndex = m_buildUi.u_tabWidget->addTab(out, name);
+        int tabIndex = m_buildUi.u_tabWidget->addTab(out, m_buildTargetName);
         m_buildUi.u_tabWidget->setCurrentIndex(tabIndex);
-        m_buildUi.u_tabWidget->setTabToolTip(tabIndex, runCmd);
+        m_buildUi.u_tabWidget->setTabToolTip(tabIndex, m_buildRunCmd);
         m_buildUi.u_tabWidget->setTabIcon(tabIndex, QIcon::fromTheme(QStringLiteral("media-playback-start")));
 
-        connect(out, &AppOutput::runningChanged, this, [this]() {
-            // Update the tab icon when the run state changes
-            for (int i = 2; i < m_buildUi.u_tabWidget->count(); ++i) {
-                AppOutput *tabOut = qobject_cast<AppOutput *>(m_buildUi.u_tabWidget->widget(i));
-                if (!tabOut) {
-                    continue;
-                }
-                if (!tabOut->runningProcess().isEmpty()) {
-                    m_buildUi.u_tabWidget->setTabIcon(i, QIcon::fromTheme(QStringLiteral("media-playback-start")));
-                } else {
-                    m_buildUi.u_tabWidget->setTabIcon(i, QIcon::fromTheme(QStringLiteral("media-playback-pause")));
-                }
-            }
-        });
+        // Update the tab icon when the run state changes
+        connect(out, &AppOutput::runningChanged, this, &KateBuildView::slotUpdateRunTabs);
+        // Clear the running icon in case the command exits faster than the runningChanged timeout
+        QTimer::singleShot(1000, this, &KateBuildView::slotUpdateRunTabs);
     }
 
-    out->setWorkingDir(workDir);
-    out->runCommand(runCmd);
+    out->setWorkingDir(m_buildWorkDir);
+    out->runCommand(m_buildRunCmd);
 
     if (m_win->activeView()) {
         m_win->activeView()->setFocus();
     }
+
+    m_buildTargetSetName.clear();
+    m_buildTargetName.clear();
+    m_buildBuildCmd.clear();
+    m_buildRunCmd.clear();
+    m_buildWorkDir.clear();
 }
 
 QString KateBuildView::toOutputHtml(const KateBuildView::OutputLine &out)

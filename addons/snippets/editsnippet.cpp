@@ -69,10 +69,45 @@ EditSnippet::EditSnippet(SnippetRepository *repository, Snippet *snippet, QWidge
         m_snippetView->document()->setMode(m_repo->fileTypes().first());
     }
 
+    connect(m_ui->modeComboBox, &QComboBox::currentIndexChanged, this, [this]() {
+        if (m_ui->modeComboBox->currentData().toInt() == Snippet::TextTemplate) {
+            m_ui->snippetLabel->setText(
+                i18n("Text to insert into the document (see the "
+                     "<a href=\"help:/kate/kate-application-plugin-snippets.html#snippet-input-template\">handbook</a> "
+                     "for special fields)."));
+            m_snippetView->document()->setMode(QStringLiteral("Normal"));
+        } else {
+            m_ui->snippetLabel->setText(
+                i18n("JavaScript code to evaluate (see the "
+                     "<a href=\"help:/kate/kate-application-plugin-snippets.html#snippet-input-script\">handbook</a> "
+                     "for details)."));
+            m_snippetView->document()->setMode(QStringLiteral("JavaScript"));
+        }
+    });
+    m_ui->snippetLabel->setOpenExternalLinks(true);
+    m_ui->modeComboBox->addItem(i18n("Text template"), QVariant(Snippet::TextTemplate));
+    m_ui->modeComboBox->addItem(i18n("Script"), QVariant(Snippet::Script));
+#if KTEXTEDITOR_VERSION < QT_VERSION_CHECK(6, 15, 0)
+    m_ui->modeComboBox->hide();
+    m_ui->modeComboBoxLabel->hide();
+#endif
+
     m_scriptsView = createView(m_ui->scriptTab);
     m_scriptsView->document()->setMode(QStringLiteral("JavaScript"));
     m_scriptsView->document()->setText(m_repo->script());
     m_scriptsView->document()->setModified(false);
+
+    m_ui->scriptLabel->setText(
+        i18n("JavaScript functions shared between all snippets in this repository (see the "
+             "<a href=\"help:/kate/kate-application-plugin-snippets.html#snippet-input-library\">handbook</a>)."));
+    m_ui->scriptLabel->setOpenExternalLinks(true);
+
+    m_ui->descriptionLabel->setText(i18n("Optional description to show in tooltips. You may use basic HTML formatting."));
+    m_descriptionView = createView(m_ui->descriptionTab);
+    if (m_snippet != nullptr) {
+        m_descriptionView->document()->setText(m_snippet->description());
+    }
+    m_descriptionView->document()->setModified(false);
 
     // view for testing the snippet
     m_testView = createView(m_ui->testWidget);
@@ -83,14 +118,9 @@ EditSnippet::EditSnippet(SnippetRepository *repository, Snippet *snippet, QWidge
     // modified notification stuff
     connect(m_ui->snippetNameEdit, &QLineEdit::textEdited, this, &EditSnippet::topBoxModified);
     connect(m_ui->snippetNameEdit, &QLineEdit::textEdited, this, &EditSnippet::validate);
+    connect(m_ui->modeComboBox, &QComboBox::currentIndexChanged, this, &EditSnippet::topBoxModified);
     connect(m_ui->snippetShortcut, &KKeySequenceWidget::keySequenceChanged, this, &EditSnippet::topBoxModified);
     connect(m_snippetView->document(), &KTextEditor::Document::textChanged, this, &EditSnippet::validate);
-
-    auto showHelp = [](const QString &text) {
-        QWhatsThis::showText(QCursor::pos(), text);
-    };
-    connect(m_ui->snippetLabel, &QLabel::linkActivated, showHelp);
-    connect(m_ui->scriptLabel, &QLabel::linkActivated, showHelp);
 
     // if we edit a snippet, add all existing data
     if (m_snippet) {
@@ -98,6 +128,9 @@ EditSnippet::EditSnippet(SnippetRepository *repository, Snippet *snippet, QWidge
 
         m_snippetView->document()->setText(m_snippet->snippet());
         m_ui->snippetNameEdit->setText(m_snippet->text());
+#if KTEXTEDITOR_VERSION >= QT_VERSION_CHECK(6, 15, 0)
+        m_ui->modeComboBox->setCurrentIndex(m_ui->modeComboBox->findData(QVariant(snippet->snippetType())));
+#endif
         m_ui->snippetShortcut->setKeySequence(m_snippet->action()->shortcut());
 
         // unset modified flags
@@ -123,8 +156,14 @@ EditSnippet::EditSnippet(SnippetRepository *repository, Snippet *snippet, QWidge
 
 void EditSnippet::test()
 {
-    m_testView->document()->clear();
-    m_testView->insertTemplate(KTextEditor::Cursor(0, 0), m_snippetView->document()->text(), m_scriptsView->document()->text());
+    auto type = (Snippet::SnippetType)m_ui->modeComboBox->currentData().toInt();
+    // NOTE: script snippets will typically want to work with existing text
+    if (type != Snippet::Script) {
+        m_testView->document()->clear();
+    }
+    Snippet snippet;
+    snippet.setSnippet(m_snippetView->document()->text(), m_descriptionView->document()->text(), type);
+    snippet.apply(m_testView, m_scriptsView->document()->text());
     m_testView->setFocus();
 }
 
@@ -162,7 +201,9 @@ void EditSnippet::save()
         m_snippet->action(); // ensure that the snippet's QAction is created before it is added to a widget by the rowsInserted() signal
         m_repo->appendRow(m_snippet);
     }
-    m_snippet->setSnippet(m_snippetView->document()->text());
+    m_snippet->setSnippet(m_snippetView->document()->text(),
+                          m_descriptionView->document()->text(),
+                          (Snippet::SnippetType)m_ui->modeComboBox->currentData().toInt());
     m_snippetView->document()->setModified(false);
     m_snippet->setText(m_ui->snippetNameEdit->text());
     m_snippet->action()->setShortcut(m_ui->snippetShortcut->keySequence());
@@ -181,7 +222,7 @@ void EditSnippet::save()
 
 void EditSnippet::reject()
 {
-    if (m_topBoxModified || m_snippetView->document()->isModified() || m_scriptsView->document()->isModified()) {
+    if (m_topBoxModified || m_snippetView->document()->isModified() || m_scriptsView->document()->isModified() || m_descriptionView->document()->isModified()) {
         int ret = KMessageBox::warningTwoActions(qApp->activeWindow(),
                                                  i18n("The snippet contains unsaved changes. Do you want to discard all changes?"),
                                                  i18n("Warning - Unsaved Changes"),

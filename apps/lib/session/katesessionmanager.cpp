@@ -178,7 +178,10 @@ bool KateSessionManager::activateSession(KateSession::Ptr session, const bool cl
         saveActiveSession();
 
         // really close last
-        if (!KateApp::self()->documentManager()->closeAllDocuments()) {
+        // dont closeUrl, The queryClose_internal() should already have queried about
+        // modified documents correctly. Doing this again leads to one dialog per doc
+        // even when we have stashing enabled.
+        if (!KateApp::self()->documentManager()->closeAllDocuments(/*closeUrl=*/false)) {
             // can still fail for modified files, bug 466553
             return false;
         }
@@ -406,13 +409,21 @@ void KateSessionManager::saveSessionTo(KConfig *sc, bool isAutoSave)
         }
     }
 
+    // Stash docs if the session is not anon
+    if (auto active = activeSession()) {
+        if (sc == active->config() && !active->isAnonymous()) {
+            KateApp::self()->stashManager()->stashDocuments(sc, KateApp::self()->documents());
+        }
+    }
+
     sc->sync();
 
     /**
      * try to sync file to disk
      */
     QFile fileToSync(sc->name());
-    if (fileToSync.open(QIODevice::ReadOnly)) {
+    // open read-write for _commit, don't use WriteOnly, that will truncate
+    if (fileToSync.open(QIODevice::ReadWrite)) {
 #ifndef Q_OS_WIN
         // ensure that the file is written to disk
 #ifdef HAVE_FDATASYNC
@@ -433,11 +444,6 @@ bool KateSessionManager::saveActiveSession(bool rememberAsLast, bool isAutoSave)
     }
 
     KConfig *sc = activeSession()->config();
-
-    // Stash docs if the session is not anon
-    if (!activeSession()->isAnonymous()) {
-        KateApp::self()->stashManager()->stashDocuments(sc, KateApp::self()->documents());
-    }
 
     saveSessionTo(sc, isAutoSave);
 

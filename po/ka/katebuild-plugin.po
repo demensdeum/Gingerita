@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: kate\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2025-03-13 00:44+0000\n"
-"PO-Revision-Date: 2025-03-08 06:11+0100\n"
+"POT-Creation-Date: 2025-06-16 00:45+0000\n"
+"PO-Revision-Date: 2025-06-16 03:40+0200\n"
 "Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
 "Language-Team: Georgian <kde-i18n-doc@kde.org>\n"
 "Language: ka\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.5\n"
+"X-Generator: Poedit 3.6\n"
 
 #, kde-format
 msgctxt "NAME OF TRANSLATORS"
@@ -108,8 +108,8 @@ msgstr ""
 msgid "Allowed && Blocked Commands"
 msgstr "დაშვებული და დაბლოკილი ბრძანებები"
 
-#: plugin_katebuild.cpp:268 plugin_katebuild.cpp:275 plugin_katebuild.cpp:724
-#: plugin_katebuild.cpp:947 plugin_katebuild.cpp:960
+#: plugin_katebuild.cpp:268 plugin_katebuild.cpp:275 plugin_katebuild.cpp:728
+#: plugin_katebuild.cpp:956 plugin_katebuild.cpp:969
 #, kde-format
 msgid "Build"
 msgstr "აგება"
@@ -182,24 +182,24 @@ msgstr ""
 msgid "Build Information"
 msgstr "აგების ინფორმაცია"
 
-#: plugin_katebuild.cpp:731
+#: plugin_katebuild.cpp:735
 #, kde-format
 msgid "There is no file or directory specified for building."
 msgstr "აგებისთვის ფაილი ან საქაღალდე მითითებული არაა."
 
-#: plugin_katebuild.cpp:735
+#: plugin_katebuild.cpp:739
 #, kde-format
 msgid ""
 "The file \"%1\" is not a local file. Non-local files cannot be compiled."
 msgstr ""
 "ფაილი \"%1\" ლოკალური ფაილი არაა. არალოკალური ფაილების აგება შეუძლებელია."
 
-#: plugin_katebuild.cpp:803
+#: plugin_katebuild.cpp:807
 #, kde-format
 msgid "Create directory"
 msgstr "საქაღალდის შექმნა"
 
-#: plugin_katebuild.cpp:806
+#: plugin_katebuild.cpp:810
 #, kde-format
 msgid ""
 "The configured working directory <b>%1</b> for the targetset <b>%2</b> does "
@@ -208,59 +208,83 @@ msgstr ""
 "მორგებული სამუშაო საქაღალდე <b>%1</b> სამიზნეების ნაკრებისთვის <b>%2</b> არ "
 "არსებობს.<br><br>შევქმნა საქაღალდე?"
 
-#: plugin_katebuild.cpp:814
+#: plugin_katebuild.cpp:818
 #, kde-format
 msgid "Failed to create the directory <b>%1</b>"
 msgstr "შექმნა ჩავარდა საქაღალდისთვის <b>%1</b>"
 
-#: plugin_katebuild.cpp:832
+#: plugin_katebuild.cpp:836
 #, kde-format
 msgid "Failed to run \"%1\". exitStatus = %2"
 msgstr "\"%1\"-ის გაშვების შეცდომა. exitStatus = %2"
 
-#: plugin_katebuild.cpp:847
+#: plugin_katebuild.cpp:851
 #, kde-format
-msgid "Building <b>%1</b> cancelled"
-msgstr "<b>%1</b> -ის აგება გაუქმდა"
+msgid "Building <b>%1: %2</b> cancelled"
+msgstr "აგება <b>%1: %2</b> გაუქმდა"
 
-#: plugin_katebuild.cpp:946
+#: plugin_katebuild.cpp:955
 #, kde-format
 msgid "Did not find a compile_commands.json for file \"%1\". "
 msgstr "ვერ ვიპოვე compile_commands.json ფაილისთვის \"%1\". "
 
-#: plugin_katebuild.cpp:959
+#: plugin_katebuild.cpp:968
 #, kde-format
 msgid "Did not find a compile command for file \"%1\" in \"%2\". "
 msgstr "ვერ ვიპოვე compile_commands.json ფაილისთვის \"%1\" \"%2\"-ში. "
 
-#: plugin_katebuild.cpp:1067
+#: plugin_katebuild.cpp:985
 #, kde-format
-msgid "No target available for building."
-msgstr "ასაგები სამიზნე ხელმიუწვდომელია."
+msgid ""
+"Cannot make \"%f\" substitution. No open file or the current file is "
+"untitled!"
+msgstr ""
+"\"%f\" ჩანაცვლება შეუძლებელია. გახსნილი ფაილი არ არსებობს ან მიმდინარე ფაილს "
+"სახელი არ აქვს!"
 
-#: plugin_katebuild.cpp:1081
+#: plugin_katebuild.cpp:989
 #, kde-format
-msgid "There is no local file or directory specified for building."
-msgstr "აგებისთვის ლოკალური არც საქაღალდეა მითითებული, არც ფაილი."
+msgid ""
+"Cannot make \"%d\" substitution. No open file or the current file is "
+"untitled!"
+msgstr ""
+"\"%d\" ჩანაცვლება შეუძლებელია. გახსნილი ფაილი არ არსებობს ან მიმდინარე ფაილს "
+"სახელი არ აქვს!"
 
-#: plugin_katebuild.cpp:1087
+#: plugin_katebuild.cpp:993
+#, kde-format
+msgid ""
+"Cannot make \"%n\" substitution. No open file or the current file is "
+"untitled!"
+msgstr ""
+"\"%n\" ჩანაცვლება შეუძლებელია. გახსნილი ფაილი არ არსებობს ან მიმდინარე ფაილს "
+"სახელი არ აქვს!"
+
+#: plugin_katebuild.cpp:1003
+#, kde-format
+msgid "Cannot make project substitution (%B). No open project!"
+msgstr "პროექტის ჩანაცვლება (%B) შეუძლებელია. ღია პროექტი არ არსებობს!"
+
+#: plugin_katebuild.cpp:1016
 #, kde-format
 msgid "Already building..."
 msgstr "აგება უკვე მიმდინარეობს..."
 
-#: plugin_katebuild.cpp:1100
+#: plugin_katebuild.cpp:1054
 #, kde-format
-msgid "Cannot make substitution. No open file or the current file is untitled!"
+msgid ""
+"Cannot execute: %1: %2 No working directory set.\n"
+"There is no local file or directory specified for building."
 msgstr ""
-"ჩანაცვლება შეუძლებელია. გახსნილი ფაილი არ არსებობს ან მიმდინარე ფაილს სახელი "
-"არ აქვს!"
+"გაშვება შეუძლებელია: %1: %2 სამუშაო საქაღალდე დაყენებული არაა.\n"
+"აგებისთვის ლოკალური არც საქაღალდეა მითითებული, არც ფაილი."
 
-#: plugin_katebuild.cpp:1110
+#: plugin_katebuild.cpp:1169
 #, kde-format
-msgid "Building target <b>%1</b> ..."
-msgstr "სამიზნის აგება <b>%1</b> ..."
+msgid "Building target <b>%1: %2</b> ..."
+msgstr "სამიზნის აგება <b>%1: %2</b> ..."
 
-#: plugin_katebuild.cpp:1147
+#: plugin_katebuild.cpp:1206
 #, kde-format
 msgid ""
 "Cannot load targets, the file %1 does not contain a proper CMAKE_COMMAND "
@@ -269,19 +293,19 @@ msgstr ""
 "სამიზნეები ვერ ჩავტვირთე, რადგან ფაილი %1 სწორ CMAKE_COMMAND ჩანაწერს არ "
 "შეიცავს !"
 
-#: plugin_katebuild.cpp:1160
+#: plugin_katebuild.cpp:1219
 #, kde-format
 msgid "Could not write CMake File API query files for build directory %1 !"
 msgstr ""
 "ვერ ჩავწერე CMake-ის ფაილის API-ის გამოთხოვის ფაილები აგების საქაღალდისთვის "
 "%1 !"
 
-#: plugin_katebuild.cpp:1166
+#: plugin_katebuild.cpp:1225
 #, kde-format
 msgid "Could not run CMake (%2) for build directory %1 !"
 msgstr "ვერ გავუშვი CMake (%2) აგების საქაღალდისთვის %1 !"
 
-#: plugin_katebuild.cpp:1175
+#: plugin_katebuild.cpp:1234
 #, kde-format
 msgid ""
 "Generating CMake File API reply files for build directory %1 failed (using "
@@ -290,12 +314,12 @@ msgstr ""
 "CMake-ის ფაილის API პასუხის ფაილების აგება ჩავარდა აგების საქაღალდისთვის %1 "
 "(ვიყენებ: %2) !"
 
-#: plugin_katebuild.cpp:1294
+#: plugin_katebuild.cpp:1353
 #, kde-format
 msgid "Build plugin wants to execute program"
 msgstr "აგების დამატებას პროგრამის გაშვება უნდა"
 
-#: plugin_katebuild.cpp:1297
+#: plugin_katebuild.cpp:1356
 #, kde-format
 msgid ""
 "The Kate build plugin needs to execute an external command to read the "
@@ -308,83 +332,78 @@ msgstr ""
 "<br><br><br>%1<br><br><br> გავუშვა ეს ბრძანება?<br><br>არჩევანი დამატების "
 "მორგების გვერდიდან შეგიძლიათ, შეცვალოთ."
 
-#: plugin_katebuild.cpp:1329
+#: plugin_katebuild.cpp:1388
 #, kde-kuit-format
 msgctxt "@info"
 msgid "<title>Build Finished:</title>%1"
 msgstr "<title>აგება დასრულდა:</title><nl/>%1"
 
-#: plugin_katebuild.cpp:1391
+#: plugin_katebuild.cpp:1449
 #, kde-format
-msgid "Build <b>%1</b> completed. %2 error(s), %3 warning(s), %4 note(s)"
-msgstr "<b>%1</b>-ის აგება დასრულდა. %2 შეცდომა, %3 გაფრთხილება, %4 შენიშვნა"
+msgid "Build <b>%1: %2</b> completed. %3 error(s), %4 warning(s), %5 note(s)"
+msgstr "აგება <b>%1: %2</b> დასრულდა. %3 შეცდომა, %4 გაფრთხილება, %5 შენიშვნა"
 
-#: plugin_katebuild.cpp:1397
+#: plugin_katebuild.cpp:1460
 #, kde-format
 msgid "Found one error."
 msgid_plural "Found %1 errors."
 msgstr[0] "ნაპოვნია ერთი შეცდომა."
 msgstr[1] "ნაპოვნია %1 შეცდომა."
 
-#: plugin_katebuild.cpp:1401
+#: plugin_katebuild.cpp:1464
 #, kde-format
 msgid "Found one warning."
 msgid_plural "Found %1 warnings."
 msgstr[0] "ნაპოვნია ერთი გაფრთხილება."
 msgstr[1] "ნაპოვნია %1 გაფრთხილება."
 
-#: plugin_katebuild.cpp:1404
+#: plugin_katebuild.cpp:1467
 #, kde-format
 msgid "Found one note."
 msgid_plural "Found %1 notes."
 msgstr[0] "ნაპოვნია ერთი შენიშვნა."
 msgstr[1] "ნაპოვნია %1 შენიშვნა."
 
-#: plugin_katebuild.cpp:1409
+#: plugin_katebuild.cpp:1472
 #, kde-format
 msgid "Build failed."
 msgstr "აგების შეცდომა."
 
-#: plugin_katebuild.cpp:1411
+#: plugin_katebuild.cpp:1474
 #, kde-format
 msgid "Build completed without problems."
 msgstr "აგება პრობლემების გარეშე შესრულდა."
 
-#: plugin_katebuild.cpp:1416
+#: plugin_katebuild.cpp:1478
 #, kde-format
-msgid "Build <b>%1 canceled</b>. %2 error(s), %3 warning(s), %4 note(s)"
-msgstr "<b>%1-ის აგება გაუქმდა</b>. %2 შეცდომა, %3 გაფრთხილება, %4 შენიშვნა"
+msgid "Build <b>%1: %2 canceled</b>. %3 error(s), %4 warning(s), %5 note(s)"
+msgstr "აგება <b>%1: %2 გაუქმდა</b>. %3 შეცდომა, %4 გაფრთხილება, %5 შენიშვნა"
 
-#: plugin_katebuild.cpp:1442
-#, kde-format
-msgid "Cannot execute: %1 No working directory set."
-msgstr "შესრულებ შეუძლებელია: %1 სამუშაო საქაღალდე დაყენებული არაა."
-
-#: plugin_katebuild.cpp:1692
+#: plugin_katebuild.cpp:1756
 #, kde-format
 msgctxt "The same word as 'gcc' uses for an error."
 msgid "error"
 msgstr "შეცდომა"
 
-#: plugin_katebuild.cpp:1695
+#: plugin_katebuild.cpp:1759
 #, kde-format
 msgctxt "The same word as 'gcc' uses for a warning."
 msgid "warning"
 msgstr "გაფრთხილება"
 
-#: plugin_katebuild.cpp:1698
+#: plugin_katebuild.cpp:1762
 #, kde-format
 msgctxt "The same words as 'gcc' uses for note or info."
 msgid "note|info"
 msgstr "შენიშვნა|ინფორმაცია"
 
-#: plugin_katebuild.cpp:1701
+#: plugin_katebuild.cpp:1765
 #, kde-format
 msgctxt "The same word as 'ld' uses to mark an ..."
 msgid "undefined reference"
 msgstr "აღუწერელი ბმა"
 
-#: plugin_katebuild.cpp:2001
+#: plugin_katebuild.cpp:2065
 #, kde-format
 msgid "Cannot save build targets in: %1"
 msgstr "შეუძლებელია აგების სამიზნეების შენახვა მისამართზე: %1"
@@ -421,20 +440,24 @@ msgstr ""
 "\"%B\" პროექტის საბაზისო საქაღალდისთვის\n"
 "\"%b\" პროექტის საბაზისო საქაღალდის სახელისთვის"
 
-#: TargetHtmlDelegate.cpp:114
+#: TargetHtmlDelegate.cpp:115
 #, kde-format
 msgid ""
 "Use:\n"
 "\"%f\" for current file\n"
 "\"%d\" for directory of current file\n"
-"\"%n\" for current file name without suffix"
+"\"%n\" for current file name without suffix\n"
+"\"%B\" for current project's base directory\n"
+"\"%w\" for the working directory of the target"
 msgstr ""
 "გამოყენება:\n"
 "\"%f\" მიმდინარე ფაილისთვის\n"
 "\"%d\" მიმდინარე ფაილის საქაღალდისთვის\n"
-"\"%n\" მიმდინარე ფაილის სახელი სუფიქსის გარეშე"
+"\"%n\" მიმდინარე ფაილის სახელი სუფიქსის გარეშე\n"
+"\"%B\" მიმდინარე პროექტის საბაზისო საქაღალდისთვის\n"
+"\"%w\" სამიზნის სამუშაო საქაღალდისთვის"
 
-#: TargetModel.cpp:316 TargetModel.cpp:328 targets.cpp:250
+#: TargetModel.cpp:316 TargetModel.cpp:328 targets.cpp:255
 #, kde-format
 msgid "Target Set"
 msgstr "სამიზნე დაყენებულია"
@@ -449,17 +472,17 @@ msgstr "პროექტები"
 msgid "Session"
 msgstr "სესია"
 
-#: TargetModel.cpp:659
+#: TargetModel.cpp:661
 #, kde-format
 msgid "Command/Target-set Name"
 msgstr "ბრძანება/სამიზნის სახელი"
 
-#: TargetModel.cpp:662
+#: TargetModel.cpp:664
 #, kde-format
 msgid "Build Command / Working Directory"
 msgstr "აგების ბრძანება / სამუშაო საქაღალდე"
 
-#: TargetModel.cpp:665
+#: TargetModel.cpp:667
 #, kde-format
 msgid "Run Command"
 msgstr "გაშვების ბრძანება"
@@ -526,13 +549,13 @@ msgstr "ამოჭრა"
 msgid "Paste after"
 msgstr "ჩასმა შემდეგ"
 
-#: targets.cpp:230 targets.cpp:252
+#: targets.cpp:230 targets.cpp:257
 #, kde-format
 msgctxt "Name/Label for a compilation or build command"
 msgid "Build Command"
 msgstr "აგების ბრძანება"
 
-#: targets.cpp:251
+#: targets.cpp:256
 #, kde-format
 msgctxt "Name/Label for a command to configure a build"
 msgid "Configure"
@@ -553,6 +576,12 @@ msgstr "ჩასვით ბილიკი"
 #, kde-format
 msgid "Select directory to insert"
 msgstr "აირჩიეთ ჩასასმელი საქაღალდე"
+
+#~ msgid "No target available for building."
+#~ msgstr "ასაგები სამიზნე ხელმიუწვდომელია."
+
+#~ msgid "Cannot execute: %1 No working directory set."
+#~ msgstr "შესრულებ შეუძლებელია: %1 სამუშაო საქაღალდე დაყენებული არაა."
 
 #~ msgid "Working Directory / Command"
 #~ msgstr "სამუშაო საქაღალდე / ბრძანება"

@@ -22,6 +22,7 @@
 */
 
 #include <KProcess>
+#include <QFileInfo>
 #include <QHash>
 #include <QPointer>
 #include <QRegularExpression>
@@ -44,6 +45,8 @@
 #include "diagnostics/diagnosticview.h"
 #include "targets.h"
 #include "ui_build.h"
+
+#include <optional>
 
 class KateBuildPlugin;
 
@@ -82,8 +85,6 @@ public:
     void readSessionConfig(const KConfigGroup &config) override;
     void writeSessionConfig(KConfigGroup &config) override;
 
-    bool buildCurrentTarget();
-
     QUrl docUrl();
 
     void sendError(const QString &);
@@ -94,10 +95,14 @@ public Q_SLOTS:
 private Q_SLOTS:
 
     // Building
+    bool trySetCommands();
     void slotSelectTarget();
+    std::optional<QString> cmdSubstitutionsApplied(const QString &command, const QFileInfo &docFileInfo, const QString &workDir);
+    void slotUpdateRunTabs();
+    void slotRunAfterBuild();
     void slotBuildSelectedTarget();
     void slotBuildAndRunSelectedTarget();
-    void slotBuildPreviousTarget();
+    void slotReBuildPreviousTarget();
     void slotCompileCurrentFile();
     bool slotStop();
 
@@ -106,7 +111,6 @@ private Q_SLOTS:
     // Parse output
     void slotProcExited(int exitCode, QProcess::ExitStatus exitStatus);
     void slotReadReadyStdOut();
-    void slotRunAfterBuild();
     void slotUpdateTextBrowser();
 
     void slotSearchBuildOutput();
@@ -158,6 +162,7 @@ private:
 
     CompileCommands m_parsedCompileCommands;
 
+    void buildSelectedTarget();
     OutputLine processOutputLine(const QString &line);
     QString toOutputHtml(const KateBuildView::OutputLine &out);
     void addError(const OutputLine &err);
@@ -200,11 +205,16 @@ private:
     int m_numNonUpdatedLines = 0;
 
     QTimer m_outputTimer;
-    QString m_currentlyBuildingTarget;
+    QString m_buildTargetSetName;
+    QString m_buildTargetName;
+    QString m_buildBuildCmd;
+    QString m_buildRunCmd;
+    QString m_buildWorkDir;
     bool m_buildCancelled = false;
-    bool m_runAfterBuild = false;
+
     QString m_makeDir;
     QStack<QString> m_makeDirStack;
+
     QStringList m_searchPaths;
     QRegularExpression m_filenameDetector;
     QRegularExpression m_newDirDetector;
