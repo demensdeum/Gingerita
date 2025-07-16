@@ -108,8 +108,10 @@ void BookmarksPlugin::onDocumentUrlChanged(KTextEditor::Document *document)
     QUrl newUrl = getBookmarkUrl(document);
     m_urls[document] = newUrl;
 
-    m_model.setBookmarks(oldUrl, {});
-    syncDocumentBookmarks(document);
+    if (newUrl.isValid()) { // When document is closing we get called with an invalid url
+        m_model.setBookmarks(oldUrl, {});
+        syncDocumentBookmarks(document);
+    }
 }
 
 void BookmarksPlugin::syncDocumentBookmarks(KTextEditor::Document *document)
@@ -118,7 +120,7 @@ void BookmarksPlugin::syncDocumentBookmarks(KTextEditor::Document *document)
     auto marks = document->marks();
 
     for (auto i = marks.cbegin(); i != marks.cend(); ++i) {
-        if (i.value()->type == KTextEditor::Document::Bookmark) {
+        if (i.value()->type & KTextEditor::Document::Bookmark) {
             lineNumbers.append(i.value()->line);
         }
     }
@@ -194,7 +196,11 @@ BookmarksPluginView::BookmarksPluginView(BookmarksPlugin *plugin, KTextEditor::M
         auto indexes = m_proxyModel.mapSelectionToSource(selected).indexes();
         removeBtn->setEnabled(!indexes.empty());
         if (!indexes.empty()) {
-            openBookmark(m_model->getBookmark(indexes.first()));
+            auto index = indexes.first();
+            auto bookmark = m_model->getBookmark(index);
+            openBookmark(bookmark);
+            // Reselect because opening a closed document with bookmarks will destroy selection state
+            m_treeView->setCurrentIndex(m_proxyModel.mapFromSource(m_model->getBookmarkIndex(bookmark)));
         }
     });
 
@@ -214,7 +220,10 @@ void BookmarksPluginView::onBookmarkClicked(const QModelIndex &index)
     auto selectedRows = m_selectionModel.selectedRows();
     if (selectedRows.length() == 1) {
         if (selectedRows.at(0).row() == index.row()) {
-            openBookmark(m_model->getBookmark(m_proxyModel.mapToSource(index)));
+            auto bookmark = m_model->getBookmark(m_proxyModel.mapToSource(index));
+            openBookmark(bookmark);
+            // Reselect because opening a closed document with bookmarks will destroy selection state
+            m_treeView->setCurrentIndex(m_proxyModel.mapFromSource(m_model->getBookmarkIndex(bookmark)));
         }
     }
 }

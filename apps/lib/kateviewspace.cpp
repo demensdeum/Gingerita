@@ -1331,6 +1331,12 @@ void KateViewSpace::restoreConfig(KateViewManager *viewMan, const KConfigBase *c
     // set back bar status to configured variant
     tabBarToggled();
 
+    // Disable opening tabs to the right of current during session restore
+    // as it can mess up the tab order during session restore and because we
+    // open tabs to right as a result of user action
+    const auto openTabsToRightOfCurrent = m_tabBar->openTabsToRightOfCurrent();
+    m_tabBar->setOpenTabsToRightOfCurrentEnabled(false);
+
     // restore Document list so that all tabs from the last session reappear
     const QStringList docList = group.readEntry("Documents", QStringList());
     for (const auto &idOrUrl : docList) {
@@ -1349,6 +1355,25 @@ void KateViewSpace::restoreConfig(KateViewManager *viewMan, const KConfigBase *c
         }
         if (doc) {
             registerDocument(doc);
+        }
+    }
+
+    m_tabBar->setOpenTabsToRightOfCurrentEnabled(openTabsToRightOfCurrent);
+
+    // Fix the tab order. If the number of docs cross the tab limit,
+    // then the first tab after the limit will go to position 0, which
+    // might be incorrect. Below we fix the tab order by traversing the
+    // m_registeredDocuments in reverse order and modifying the tabs
+    // in tab bar.
+    // docList: 0 1 2 3
+    // m_registeredDocuments: 3 2 1 0
+    const QList<DocOrWidget> tabsList = m_tabBar->documentList();
+    if (tabsList.size() < docList.size()) {
+        int firstDocIndex = docList.size() - tabsList.size();
+        auto docIt = m_registeredDocuments.rbegin() + firstDocIndex;
+        for (int i = 0; i < tabsList.size(); i++) {
+            m_tabBar->setTabDocument(i, *docIt);
+            docIt++;
         }
     }
 

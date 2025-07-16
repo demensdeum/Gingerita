@@ -321,6 +321,12 @@ KateQuickOpen::KateQuickOpen(KateMainWindow *mainWindow)
     updateState();
 }
 
+KateQuickOpen::~KateQuickOpen()
+{
+    m_listView->removeEventFilter(this);
+    m_inputLine->removeEventFilter(this);
+}
+
 bool KateQuickOpen::eventFilter(QObject *obj, QEvent *event)
 {
     // catch key presses + shortcut overrides to allow to have ESC as application wide shortcut, too, see bug 409856
@@ -344,6 +350,10 @@ bool KateQuickOpen::eventFilter(QObject *obj, QEvent *event)
         }
 
         if (keyEvent->key() == Qt::Key_Escape) {
+            if (event->type() == QEvent::ShortcutOverride) {
+                return true;
+            }
+
             hide();
             deleteLater();
             return true;
